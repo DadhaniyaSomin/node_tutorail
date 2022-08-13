@@ -5,6 +5,7 @@ const path = require('path');
 const cors = require('cors');
 const { logger } = require('./middleware/logEvents');
 const corsOptions =  require('./config/corsOption');
+
 // const errorHandler = require('./middleware/errorHandler');
 const PORT = process.env.PORT || 3500;
 
@@ -28,6 +29,8 @@ app.use('/', express.static(path.join(__dirname, '/public')));
 
 // routes
 app.use('/', require('./routes/root'));
+app.use('/register',require('./routes/api/register'));
+app.use('/login',require('./routes/api/auth'));
 app.use('/employees', require('./routes/api/employees'));
 
 app.all('*', (req, res) => {
