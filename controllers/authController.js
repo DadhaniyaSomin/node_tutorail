@@ -5,6 +5,11 @@ const usersDB = {
     },
   };
 
+const jwt = require('jsonwebtoken');
+require('dotenv');
+const fsPromises = require('fs').promises;
+const path = require('path');
+
 const bcrypt = require('bcrypt');
 const handleLogin = async (req, res) => {
     const { user, pwd } = req.body;
@@ -22,7 +27,15 @@ const handleLogin = async (req, res) => {
     console.log(match);
    if(match){
     // create jwt
-    
+    const accessToken = jwt.sign(
+      {
+        "username" : foundUser.username,
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiredIn : '30s'
+      }
+    )
     res.json({'success': `User ${user} is logged In !`});
    }else
    {
