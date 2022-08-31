@@ -46,3 +46,7 @@ app.all('*', (req, res) => {
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+
+//require('crypto').randomBytes(64).toString('hex')

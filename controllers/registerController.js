@@ -20,7 +20,7 @@ const handleNeeUser = async (req, res) => {
   //check dulpicate username
   const duplicate = usersDB.users.find(person => person.username === user);
 
-  if (duplicate) return res.status(409); //conflict
+  if (duplicate) return res.send("User aleardy ecist"); //conflict
 
   try {
     

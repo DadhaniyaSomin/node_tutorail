@@ -1,47 +1,71 @@
 const usersDB = {
-    users: require("../model/users.json"),
-    setUsers: function (data) {
-      this.users = data;
-    },
-  };
+  users: require("../model/users.json"),
+  setUsers: function (data) {
+    this.users = data;
+  },
+};
 
-const jwt = require('jsonwebtoken');
-require('dotenv');
-const fsPromises = require('fs').promises;
-const path = require('path');
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+const fsPromises = require("fs").promises;
+const path = require("path");
 
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 const handleLogin = async (req, res) => {
-    const { user, pwd } = req.body;
-    if (!user || !pwd)
-      return res
-        .status(404)
-        .json({ message: "UserName and Password are required." });
-  
-  
-    const foundUser = usersDB.users.find(person => person.username === user);
+  const { user, pwd } = req.body;
+  if (!user || !pwd)
+    return res
+      .status(404)
+      .json({ message: "UserName and Password are required." });
 
-    if(!foundUser)return res.sendStatus(401); //unauthorized
+  const foundUser = usersDB.users.find((person) => person.username === user);
 
-    const match = await bcrypt.compare(pwd, foundUser.password);
-    console.log(match);
-   if(match){
+  if (!foundUser) return res.send("user aleardy exist."); //unauthorized
+
+  const match = await bcrypt.compare(pwd, foundUser.password);
+  console.log(process.env.ACCESS_TOKEN_SECRET);
+  if (match) {
     // create jwt
     const accessToken = jwt.sign(
       {
-        "username" : foundUser.username,
+        username: foundUser.username,
       },
       process.env.ACCESS_TOKEN_SECRET,
       {
-        expiredIn : '30s'
+        expiresIn: "30s",
       }
-    )
-    res.json({'success': `User ${user} is logged In !`});
-   }else
-   {
-    res.sendStatus(401);
-   }
+    );
 
+    const refreshToken = jwt.sign(
+      {
+        username: foundUser.username,
+      },
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    const otherUser  = usersDB.users.filter(person=> person.username !== foundUser.username);
+
+    
+    const currentUser = {...foundUser , refreshToken};
+    usersDB.setUsers([...otherUser,currentUser]);
+
+
+    await fsPromises.writeFile(
+      path.join(__dirname,'..','model','users.json'),
+      JSON.stringify(usersDB.users)
+    );
+
+    res.cookie('jwt',refreshToken ,{httpOnly :true ,maxAge : 24*60*60*1000});
+    res.json({
+      success: `User ${user} is logged In !`,
+      accessToken: accessToken,
+    });
+  } else {
+    res.sendStatus(401);
+  }
 };
 
-module.exports = { handleLogin}
+module.exports = { handleLogin };
